@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Optional
 
+import pathspec
 from rich import print
 
 from .codegen import generate_all, generate_import
 from .parsing import File, PythonObject
-from collections.abc import Sequence
-import pathspec
 
 
 def load_gitignore(root: Path) -> pathspec.PathSpec:
@@ -119,7 +119,6 @@ class GenAll:
 
     @property
     def _sub_files(self) -> list[File]:
-        # TODO: only python files
         return [
             File(p)
             for p in self._base_path.iterdir()
