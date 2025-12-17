@@ -1,17 +1,62 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Optional
+
+from rich import print
 
 from .codegen import generate_all, generate_import
 from .parsing import File, PythonObject
+from collections.abc import Sequence
+import pathspec
+
+
+def load_gitignore(root: Path) -> pathspec.PathSpec:
+    gitignore = root / ".gitignore"
+
+    if not gitignore.exists():
+        return pathspec.PathSpec.from_lines("gitwildmatch", [])
+
+    with gitignore.open() as f:
+        return pathspec.PathSpec.from_lines("gitwildmatch", f)
+
+
+def check_ignored(specs: Sequence[pathspec.PathSpec], root: Path, path: Path) -> bool:
+    rel_path = path.relative_to(root)
+
+    for spec in reversed(specs):
+        if spec.match_file(str(rel_path)):
+            return True
+
+    return False
 
 
 class GenAll:
 
-    def __init__(self, base_path: Path) -> None:
+    def __init__(
+        self,
+        base_path: Path,
+        pathspecs: Optional[list[pathspec.PathSpec]] = None,
+    ) -> None:
         self._base_path = base_path
         self._all_objs: list[PythonObject] = []
         self._initialized = False
+
+        if pathspecs is not None:
+            self._pathspecs = [
+                *pathspecs,
+                load_gitignore(base_path),
+            ]
+        else:
+            self._pathspecs = [
+                pathspec.PathSpec(
+                    [
+                        pathspec.RegexPattern(".git"),
+                        pathspec.RegexPattern("__init__.py"),
+                    ],
+                ),
+                load_gitignore(base_path),
+            ]
 
     def write_to_file(self) -> None:
         for dir in self._sub_dirs:
@@ -30,18 +75,18 @@ class GenAll:
 
             items.append((p, obj._name))
 
-        imports: list[str] = []
-
-        for item in items:
-            imports.append(generate_import(*item))
-
+        imports = [generate_import(*item) for item in items]
         imp = "\n".join(imports)
+
         code = generate_all([i[1] for i in items])
 
         file_contents = f"{imp}\n\n{code}"
 
         with open(self._init_path, "w") as file:
             file.write(file_contents)
+
+        rel = self._init_path.relative_to(self._base_path)
+        print(f"[green]+[/green] [bold]Creating file[/bold] [purple]{rel}[/purple]")
 
     @property
     def all_objs(self) -> list[PythonObject]:
@@ -65,12 +110,23 @@ class GenAll:
     @property
     def _sub_dirs(self) -> list[GenAll]:
         # TODO: only containing python files
-        return [GenAll(p) for p in self._base_path.iterdir() if not p.is_file()]
+        return [
+            GenAll(p, pathspecs=self._pathspecs)
+            for p in self._base_path.iterdir()
+            if not p.is_file()
+            and not check_ignored(self._pathspecs, self._base_path, p)
+        ]
 
     @property
     def _sub_files(self) -> list[File]:
         # TODO: only python files
-        return [File(p) for p in self._base_path.iterdir() if p.is_file()]
+        return [
+            File(p)
+            for p in self._base_path.iterdir()
+            if p.is_file()
+            and p.suffix == ".py"
+            and not check_ignored(self._pathspecs, self._base_path, p)
+        ]
 
     @property
     def _init_path(self) -> Path:
