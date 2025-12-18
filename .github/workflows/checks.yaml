@@ -1,0 +1,35 @@
+name: Automated file updates
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  commit_changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Format Python
+        run: |
+          pipx install uv
+          uv sync --all-extras --dev
+          uv run isort genall
+          uv run black genall
+
+      - name: fmting
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: add genall, isort, black fixes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Type check with mypy
+        run: uv run mypy .
+
+      - name: Run tests
+        run: uv run pytest .

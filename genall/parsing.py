@@ -33,18 +33,22 @@ class File:
         objs: list[PythonObject] = []
 
         for node in self._ast.body:
-            if isinstance(node, ast.FunctionDef):
-                objs.append(PythonObject(self, "function", node.name))
-            elif isinstance(node, ast.AsyncFunctionDef):
-                objs.append(PythonObject(self, "function", node.name))
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                name = node.name
+                obj = PythonObject(self, "function", name)
             elif isinstance(node, ast.ClassDef):
-                objs.append(PythonObject(self, "class", node.name))
+                name = node.name
+                obj = PythonObject(self, "class", name)
             elif isinstance(node, ast.Assign):
+                # TODO: multiple assignments...
                 name = node.targets[0].id
+                obj = PythonObject(self, "variable", name)
+            else:
+                continue
 
-                if name.startswith("_"):
-                    continue
+            if name.startswith("_"):
+                continue
 
-                objs.append(PythonObject(self, "variable", name))
+            objs.append(obj)
 
         return sorted(objs, key=lambda x: x._name)

@@ -1,4 +1,4 @@
-def indent() -> None:
+def indent() -> str:
     return " " * 4
 
 
