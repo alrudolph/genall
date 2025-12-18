@@ -1,23 +1,31 @@
 name: Automated file updates
 
 on:
-  push:
+  pull_request:
     branches:
       - main
 
 jobs:
   commit_changes:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          python-version-file: ".python-version"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
 
       - name: Format Python
         run: |
-          pipx install uv
-          uv sync --all-extras --dev
           uv run isort genall
           uv run black genall
 
