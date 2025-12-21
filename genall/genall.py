@@ -9,7 +9,7 @@ from rich import print
 
 from .codegen import generate_all, generate_import
 from .parsing import File, PythonObject
-
+from .filters.file_filter import ConfigFileFilter
 
 def load_gitignore(root: Path) -> pathspec.PathSpec:
     gitignore = root / ".gitignore"
@@ -58,13 +58,16 @@ class GenAll:
                 load_gitignore(base_path),
             ]
 
-    def write_to_file(self) -> None:
+    def write_to_file(self, filter: Optional[ConfigFileFilter] = None) -> None:
         for dir in self._sub_dirs:
-            dir.write_to_file()
+            dir.write_to_file(filter=filter)
 
         items: list[tuple[str, str]] = []
 
         for obj in self.all_objs:
+            if filter is not None and not filter.keep(obj):
+                continue
+
             rel = obj._file._path.relative_to(self._base_path)
             parts = rel.parts
 
