@@ -1,4 +1,5 @@
 classes:
-  - name: ConfigFileFilter
+  - name: Filter
+    include: false
 functions: []
 variables: []

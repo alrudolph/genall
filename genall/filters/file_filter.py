@@ -19,6 +19,9 @@ class ConfigFileFilter:
         with open(path, "r") as f:
             data = safe_load(f)
 
+        if data is None:
+            data = {}
+
         classes: list[Filter] | None = None
         functions: list[Filter] | None = None
         variables: list[Filter] | None = None
@@ -68,6 +71,9 @@ class ConfigFileFilter:
         
         for filter in filters:
             if not filter.matches(obj):
+                if not filter._include:
+                    return True
+                
                 continue
 
             return filter.keep(obj)
