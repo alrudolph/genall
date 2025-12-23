@@ -1,6 +1,5 @@
-from .parsing import File
-from .parsing import PythonObject
 from .genall import GenAll
+from .parsing import File, PythonObject
 
 __all__ = [
     "File",

@@ -4,6 +4,7 @@ import click
 
 from .genall import GenAll
 
+
 @click.command()
 @click.option(
     "--path",

@@ -8,8 +8,9 @@ import pathspec
 from rich import print
 
 from .codegen import generate_all, generate_import
-from .parsing import File, PythonObject
 from .filters.file_filter import ConfigFileFilter
+from .parsing import File, PythonObject
+
 
 def load_gitignore(root: Path) -> pathspec.PathSpec:
     gitignore = root / ".gitignore"
@@ -62,6 +63,9 @@ class GenAll:
         for dir in self._sub_dirs:
             dir.write_to_file()
 
+        if not self._filter_file_path.exists():
+            return
+
         items: list[tuple[str, str]] = []
 
         for obj in self.all_objs:
@@ -112,7 +116,7 @@ class GenAll:
                     continue
 
                 output.append(item)
-            
+
         self._all_objs = output
 
     @property
@@ -138,15 +142,13 @@ class GenAll:
     @property
     def _init_path(self) -> Path:
         return self._base_path / "__init__.py"
-    
+
     @property
     def _filters(self) -> list[ConfigFileFilter]:
         if not self._filter_file_path.exists():
             return []
-        
-        return [
-            ConfigFileFilter.from_file(self._filter_file_path)
-        ]
+
+        return [ConfigFileFilter.from_file(self._filter_file_path)]
 
     @property
     def _filter_file_path(self) -> Path:

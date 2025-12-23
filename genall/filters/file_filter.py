@@ -1,18 +1,25 @@
 from __future__ import annotations
 
+import re
+from pathlib import Path
 from typing import Optional
 
-from genall.parsing import PythonObject
-from pathlib import Path
 from yaml import safe_load
-import re
+
+from genall.parsing import PythonObject
+
 
 class ConfigFileFilter:
 
-    def __init__(self, classes: Optional[list[Filter]] = None, functions: Optional[list[Filter]] = None, variables: Optional[list[Filter]] = None) -> None:
-        self._classes = classes 
-        self._functions = functions 
-        self._variables = variables 
+    def __init__(
+        self,
+        classes: Optional[list[Filter]] = None,
+        functions: Optional[list[Filter]] = None,
+        variables: Optional[list[Filter]] = None,
+    ) -> None:
+        self._classes = classes
+        self._functions = functions
+        self._variables = variables
 
     @classmethod
     def from_file(cls, path: Path) -> ConfigFileFilter:
@@ -43,7 +50,7 @@ class ConfigFileFilter:
                     type="function",
                     name=item["name"],
                     include=item.get("include", True),
-            )
+                )
             functions.append(filter)
 
         if data.get("variables") is not None:
@@ -53,7 +60,7 @@ class ConfigFileFilter:
                     type="variable",
                     name=item["name"],
                     include=item.get("include", True),
-            )
+                )
             variables.append(filter)
 
         return cls(
@@ -64,31 +71,35 @@ class ConfigFileFilter:
 
     def keep(self, obj: PythonObject) -> bool:
         return self._keep_by_type(obj)
-    
-    def _keep_obj_filters(self, obj: PythonObject, filters: Optional[list[Filter]] = None) -> bool:
+
+    def _keep_obj_filters(
+        self,
+        obj: PythonObject,
+        filters: Optional[list[Filter]] = None,
+    ) -> bool:
         if filters is None:
             return True
-        
+
         for filter in filters:
             if not filter.matches(obj):
                 if not filter._include:
                     return True
-                
+
                 continue
 
             return filter.keep(obj)
 
         return False
-    
+
     def _keep_class(self, obj: PythonObject) -> bool:
         return self._keep_obj_filters(obj, self._classes)
-    
+
     def _keep_function(self, obj: PythonObject) -> bool:
         return self._keep_obj_filters(obj, self._functions)
-    
+
     def _keep_variable(self, obj: PythonObject) -> bool:
         return self._keep_obj_filters(obj, self._variables)
-    
+
     def _keep_by_type(self, obj: PythonObject) -> bool:
         if obj._type == "class":
             return self._keep_class(obj)
@@ -96,8 +107,9 @@ class ConfigFileFilter:
             return self._keep_function(obj)
         elif obj._type == "variable":
             return self._keep_variable(obj)
-        
+
         return True
+
 
 class Filter:
 
@@ -109,20 +121,17 @@ class Filter:
     def matches(self, obj: PythonObject) -> bool:
         if obj._type != self._type:
             return False
-        
+
         if not self._name.startswith("/") or not self._name.endswith("/"):
             return obj._name == self._name
-            
+
         pattern = self._name[1:-1]
         return re.match(pattern, obj._name) is not None
 
-
     def keep(self, obj: PythonObject) -> bool:
-        print("checking", obj, "against", self, "matches", self.matches(obj))
-        
         if not self.matches(obj):
             return False
-            
+
         return self._include
 
     def __repr__(self) -> str:
