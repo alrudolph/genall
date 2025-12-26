@@ -11,7 +11,8 @@ def generate_import(from_: str, item: str) -> str:
 
 class Buildable:
 
-    def build(self) -> str: ...
+    def build(self) -> str:
+        raise NotImplementedError
 
 
 class Assign(Buildable):

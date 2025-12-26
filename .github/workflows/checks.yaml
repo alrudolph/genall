@@ -38,7 +38,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Type check with mypy
-        run: uv run mypy .
+        run: uv run mypy genall
 
       - name: Run tests
         run: uv run pytest .
