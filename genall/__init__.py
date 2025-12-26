@@ -3,6 +3,6 @@ from .parsing import File, PythonObject
 
 __all__ = [
     "File",
-    "PythonObject",
     "GenAll",
+    "PythonObject",
 ]
