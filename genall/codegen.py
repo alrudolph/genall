@@ -2,7 +2,7 @@ from typing import Optional, overload
 
 
 def generate_all(items: list[str]) -> str:
-    return Assign("__all__", List(items)).build()
+    return Assign("__all__", List(sorted(items))).build()
 
 
 def generate_import(from_: str, item: str) -> str:
